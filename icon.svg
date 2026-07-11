@@ -1,0 +1,16 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>App-Icon: Quittung/Rechnung, weiss auf schwarz</title>
+<desc>Schwarzes, abgerundetes Quadrat als Hintergrund mit einem zentrierten weissen Beleg-Symbol: Blatt mit gezacktem unterem Rand und drei horizontalen Linien.</desc>
+<rect x="0" y="0" width="512" height="512" rx="114" fill="#0a0a0a"/>
+<path d="M148 96
+         L332 96
+         L376 140
+         L376 424
+         L332 400 L288 424 L244 400 L200 424 L156 400 L112 424
+         L112 152
+         C112 121.072 137.072 96 168 96 Z"
+      fill="none" stroke="#ededed" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="172" y1="196" x2="316" y2="196" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="172" y1="260" x2="316" y2="260" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="172" y1="324" x2="272" y2="324" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+</svg>
