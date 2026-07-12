@@ -9,8 +9,8 @@
          L338.13 386.51 L297.18 408.83 L256.23 386.51 L215.29 408.83 L174.35 386.51 L133.40 408.83
          L133.40 155.73
          C133.40 126.95 156.73 103.63 185.51 103.63 Z"
-      fill="none" stroke="#ededed" stroke-width="18.61" stroke-linejoin="round" stroke-linecap="round"/>
-<line x1="189.23" y1="196.68" x2="323.24" y2="196.68" stroke="#ededed" stroke-width="18.61" stroke-linecap="round"/>
-<line x1="189.23" y1="256.23" x2="323.24" y2="256.23" stroke="#ededed" stroke-width="18.61" stroke-linecap="round"/>
-<line x1="189.23" y1="315.79" x2="282.29" y2="315.79" stroke="#ededed" stroke-width="18.61" stroke-linecap="round"/>
+      fill="none" stroke="#ededed" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="189.23" y1="196.68" x2="323.24" y2="196.68" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="189.23" y1="256.23" x2="323.24" y2="256.23" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="189.23" y1="315.79" x2="282.29" y2="315.79" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
 </svg>
