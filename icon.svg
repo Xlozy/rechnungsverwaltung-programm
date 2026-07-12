@@ -1,16 +1,13 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img">
-<title>App-Icon: Quittung/Rechnung, weiss auf schwarz</title>
-<desc>Schwarzes, abgerundetes Quadrat als Hintergrund mit einem zentrierten weissen Beleg-Symbol: Blatt mit gezacktem unterem Rand und drei horizontalen Linien.</desc>
+<title>App-Icon Variante: nur Belegzettel-Umriss, weiss auf schwarz</title>
+<desc>Schwarzes, abgerundetes Quadrat als Hintergrund mit einem zentrierten weissen Beleg-Umriss (Blatt mit gezacktem unterem Rand), ohne die drei horizontalen Linien. Etwas kleiner skaliert als die Belegzettel-Variante mit Linien.</desc>
 <rect x="0" y="0" width="512" height="512" rx="114" fill="#0a0a0a"/>
-<path d="M171.89 112.16
-         L333.53 112.16
-         L372.17 150.84
-         L372.17 400.27
-         L333.53 379.20 L294.87 400.27 L256.22 379.20 L217.57 400.27 L178.92 379.20 L140.27 400.27
-         L140.27 161.35
-         C140.27 134.18 162.29 112.16 189.46 112.16 Z"
+<path d="M184.51 133.74
+         L321.90 133.74
+         L354.74 166.61
+         L354.74 378.63
+         L321.90 360.72 L289.04 378.63 L256.19 360.72 L223.33 378.63 L190.48 360.72 L157.63 378.63
+         L157.63 175.55
+         C157.63 152.45 176.16 133.74 199.25 133.74 Z"
       fill="none" stroke="#ededed" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
-<line x1="192.97" y1="200.00" x2="319.47" y2="200.00" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
-<line x1="192.97" y1="256.22" x2="319.47" y2="256.22" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
-<line x1="192.97" y1="312.44" x2="280.82" y2="312.44" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
 </svg>
