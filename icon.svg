@@ -2,15 +2,15 @@
 <title>App-Icon: Quittung/Rechnung, weiss auf schwarz</title>
 <desc>Schwarzes, abgerundetes Quadrat als Hintergrund mit einem zentrierten weissen Beleg-Symbol: Blatt mit gezacktem unterem Rand und drei horizontalen Linien.</desc>
 <rect x="0" y="0" width="512" height="512" rx="114" fill="#0a0a0a"/>
-<path d="M166.90 103.63
-         L338.13 103.63
-         L379.06 144.60
-         L379.06 408.83
-         L338.13 386.51 L297.18 408.83 L256.23 386.51 L215.29 408.83 L174.35 386.51 L133.40 408.83
-         L133.40 155.73
-         C133.40 126.95 156.73 103.63 185.51 103.63 Z"
+<path d="M171.89 112.16
+         L333.53 112.16
+         L372.17 150.84
+         L372.17 400.27
+         L333.53 379.20 L294.87 400.27 L256.22 379.20 L217.57 400.27 L178.92 379.20 L140.27 400.27
+         L140.27 161.35
+         C140.27 134.18 162.29 112.16 189.46 112.16 Z"
       fill="none" stroke="#ededed" stroke-width="20" stroke-linejoin="round" stroke-linecap="round"/>
-<line x1="189.23" y1="196.68" x2="323.24" y2="196.68" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
-<line x1="189.23" y1="256.23" x2="323.24" y2="256.23" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
-<line x1="189.23" y1="315.79" x2="282.29" y2="315.79" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="192.97" y1="200.00" x2="319.47" y2="200.00" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="192.97" y1="256.22" x2="319.47" y2="256.22" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
+<line x1="192.97" y1="312.44" x2="280.82" y2="312.44" stroke="#ededed" stroke-width="20" stroke-linecap="round"/>
 </svg>
