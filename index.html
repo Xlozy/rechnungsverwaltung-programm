@@ -151,17 +151,19 @@ tr.paid      { background: rgba(74,222,128,0.06); }
 tr.reminder1 { background: rgba(245,158,11,0.06); }
 tr.reminder2 { background: rgba(251,146,60,0.08); }
 tr.reminder3 { background: rgba(239,68,68,0.08); }
+tr.cancelled { background: rgba(138,138,138,0.07); opacity: 0.7; }
 
 .status-badge, .type-badge {
   display: inline-block; font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.3px;
   border-radius: 4px; padding: 3px 7px; white-space: nowrap; line-height: 1.5;
 }
-.status-offen    { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
-.status-mahnung1 { background: #431407; color: var(--warn); }
-.status-mahnung2 { background: #431407; color: var(--orange); }
-.status-mahnung3 { background: #450a0a; color: #f87171; }
-.status-bezahlt  { background: #052e16; color: var(--green); }
+.status-offen     { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+.status-mahnung1  { background: #431407; color: var(--warn); }
+.status-mahnung2  { background: #431407; color: var(--orange); }
+.status-mahnung3  { background: #450a0a; color: #f87171; }
+.status-bezahlt   { background: #052e16; color: var(--green); }
+.status-storniert { background: var(--surface-2); color: var(--text-dim); border: 1px dashed var(--border); text-decoration: line-through; }
 .type-membership { background: #172554; color: var(--accent); }
 .type-invoice    { background: #2e1065; color: var(--purple); }
 
@@ -224,6 +226,8 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
 .contacts-add-btn:hover { opacity: 0.88; }
 .contact-card label { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
 .contact-card input[type="checkbox"] { margin-top: 3px; width: auto; flex-shrink: 0; transform: scale(1.2); }
+.contact-tags { margin-top: 6px; }
+.tag-chip { display: inline-block; background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); border-radius: 10px; padding: 2px 8px; font-size: 11px; margin: 4px 4px 0 0; }
 
 /* ── Einstellungen ───────────────────────────────────────────────── */
 .settings-section { margin-bottom: 24px; }
@@ -414,6 +418,10 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
       <strong>Kontakte auswählen:</strong>
       <button class="small" onclick="selectAllContacts()">Alle auswählen</button>
       <button class="small" onclick="deselectAllContacts()">Alle abwählen</button>
+      <label style="margin:0; color:var(--text-dim); font-size:13px;">Nach Tag filtern:</label>
+      <select id="bulk_tagFilter" style="width:auto; min-width:160px;" onchange="renderBulkContactsGrid()">
+        <option value="">Alle Kontakte</option>
+      </select>
     </div>
     <div id="bulk-contacts-grid" class="contact-card-grid" style="margin-bottom:16px;"></div>
 
@@ -453,9 +461,10 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
       <option value="offen">Offen</option>
       <option value="mahnung">Mahnungen</option>
       <option value="bezahlt">Bezahlt</option>
+      <option value="storniert">Storniert</option>
     </select>
   </div>
-  
+
   <div class="legend">
     <strong>Status:</strong>
     <span class="status-badge status-offen">Offen</span>
@@ -463,6 +472,7 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
     <span class="status-badge status-mahnung2">2. Mahnung</span>
     <span class="status-badge status-mahnung3">3. Mahnung</span>
     <span class="status-badge status-bezahlt">Bezahlt</span>
+    <span class="status-badge status-storniert">Storniert</span>
     <br><br>
     <strong>Typ:</strong>
     <span class="type-badge type-membership">Mitgliederbeitrag</span>
@@ -494,7 +504,10 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
 <div id="tab-contacts" class="tab-content">
   <h2>Kontakte</h2>
   <p class="hint" style="margin-bottom:16px;">Gespeicherte Kontakte werden beim Tippen des Namens als Vorschlag angezeigt und füllen alle Felder automatisch aus. Sie stehen auch bei der Sammelrechnung im Tab «Rechnungen» zur Auswahl.</p>
-  <button class="contacts-add-btn" onclick="openContactModal(null)">+ Neuen Kontakt</button>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+    <button class="contacts-add-btn" style="margin-bottom:0;" onclick="openContactModal(null)">+ Neuen Kontakt</button>
+    <button class="contacts-add-btn" style="margin-bottom:0; background:var(--surface-2); color:var(--text);" onclick="importContactsFromInvoices()">Kontakte aus Rechnungen ergänzen</button>
+  </div>
   <div id="contacts-grid" class="contact-card-grid"></div>
 </div>
   </main>
@@ -623,6 +636,10 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
         </div>
       </div>
       <div class="form-full">
+        <label>Tags (durch Komma getrennt)</label>
+        <input id="contact_tags" placeholder="z.B. Mitglied VSPW, Vorstand">
+      </div>
+      <div class="form-full">
         <label>Notizen (optional)</label>
         <textarea id="contact_notes" rows="2" placeholder="z.B. Mitgliedschaftstyp, Bemerkungen..."></textarea>
       </div>
@@ -724,6 +741,26 @@ tr.reminder3 { background: rgba(239,68,68,0.08); }
         <button type="submit" class="btn-save">Speichern</button>
         <button type="button" class="btn-delete" onclick="deleteInvoice()">Löschen</button>
         <button type="button" class="btn-cancel" onclick="closeEditModal()">Abbrechen</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="markPaidModal" class="modal-overlay" onclick="if(event.target===this)closeMarkPaidModal()">
+  <div class="modal">
+    <h3>Als bezahlt erfassen</h3>
+    <form id="markPaidForm">
+      <input type="hidden" id="markpaid_index">
+      <div class="form-full">
+        <label>Zahlungsdatum</label>
+        <input id="markpaid_date" required type="date">
+      </div>
+      <div class="form-full">
+        <label>Bemerkung (optional)</label>
+        <input id="markpaid_note" placeholder="z.B. Überzahlung, Rest als Spende">
+      </div>
+      <div class="modal-buttons">
+        <button type="submit" class="btn-save">Speichern</button>
+        <button type="button" class="btn-cancel" onclick="closeMarkPaidModal()">Abbrechen</button>
       </div>
     </form>
   </div>
@@ -1154,6 +1191,11 @@ const storageKey  = () => 'rv_invoices_'  + ORG;
 const settingsKey = () => 'rv_settings_'  + ORG;
 const contactsKey = () => 'rv_contacts_'  + ORG;
 
+// Auswahl in der Sammelrechnungs-Kontaktliste — als Set statt DOM-Scan geführt,
+// damit ausgewählte Kontakte beim Umschalten des Tag-Filters (renderBulkContactsGrid
+// baut das Grid neu auf) nicht verloren gehen.
+let bulkSelectedContactIds = new Set();
+
 // Konfiguration
 
 const MEMBER_TYPES = {
@@ -1203,7 +1245,7 @@ function renderDashboard() {
   const container = document.getElementById('dashboard-content');
   if (!container) return;
 
-  const invoices = loadInvoices().filter(inv => !inv.deleted && !inv.paid);
+  const invoices = loadInvoices().filter(inv => !inv.deleted && !inv.paid && !inv.cancelled);
   const counts = { offen: 0, mahnung1: 0, mahnung2: 0, mahnung3: 0 };
   invoices.forEach(inv => {
     const s = calculateStatus(inv);
@@ -1362,7 +1404,21 @@ function formatCurrency(amount) {
   return `CHF ${amount.toFixed(2)}`;
 }
 
+function sanitizeFilename(str) {
+  return (str || '').replace(/[\\/:*?"<>|]/g, '-').trim();
+}
+
+// Einheitliche Beleg-Nomenklatur (Rechnungsnummer_Kundenname), sowohl für den
+// tatsächlichen PDF-Dateinamen (generatePDF) als auch für die "Beleg"-Spalte
+// im CSV-Export — beide müssen übereinstimmen, damit die CSV-Zeile den Beleg
+// in der Buchhaltung wiederfindbar macht.
+function belegFilename(invoice) {
+  const num = invoice.invoiceNumber || (invoice.type === 'membership' ? `MB-${invoice.year}` : 'RE');
+  return `${sanitizeFilename(num)}_${sanitizeFilename(invoice.customerName)}.pdf`;
+}
+
 function calculateStatus(invoice) {
+  if (invoice.cancelled) return "storniert";
   if (invoice.paid) return "bezahlt";
   
   const today = new Date().toISOString().split("T")[0];
@@ -1444,6 +1500,7 @@ function render() {
       if (statusFilter === 'offen') return status === 'offen';
       if (statusFilter === 'mahnung') return status.startsWith('mahnung');
       if (statusFilter === 'bezahlt') return status === 'bezahlt';
+      if (statusFilter === 'storniert') return status === 'storniert';
       return true;
     });
   }
@@ -1455,25 +1512,28 @@ function render() {
   });
   
   filtered.forEach((invoice) => {
-    const originalInvoices = loadInvoices();
-    const originalIndex = originalInvoices.findIndex(i => 
-      i.customerName === invoice.customerName && 
-      i.invoiceDate === invoice.invoiceDate &&
-      (i.invoiceNumber === invoice.invoiceNumber || i.year === invoice.year)
-    );
-    
+    // invoice ist dieselbe Objektreferenz wie in invoices[] (filter() klont nicht),
+    // daher liefert indexOf() zuverlässig den echten Index. Der vorherige Re-Fetch
+    // + Fuzzy-Match (Name+Datum+(Rechnungsnummer ODER Jahr)) traf bei zwei normalen
+    // Rechnungen (type "invoice", also year immer undefined) am selben Tag für
+    // dieselbe Person IMMER den ersten Treffer, unabhängig von der Rechnungsnummer
+    // — Ursache des Bugs, dass die zweite Rechnung die erste überschrieb.
+    const originalIndex = invoices.indexOf(invoice);
+
     const status = calculateStatus(invoice);
     
     const tr = document.createElement("tr");
-    tr.className = status === "bezahlt" ? "paid" : 
-                   status === "mahnung1" ? "reminder1" : 
-                   status === "mahnung2" ? "reminder2" : 
+    tr.className = status === "bezahlt" ? "paid" :
+                   status === "storniert" ? "cancelled" :
+                   status === "mahnung1" ? "reminder1" :
+                   status === "mahnung2" ? "reminder2" :
                    status === "mahnung3" ? "reminder3" : "";
-    
+
     let statusLabel = status === "offen" ? "Offen" :
                       status === "mahnung1" ? "1. Mahnung fällig" :
                       status === "mahnung2" ? "2. Mahnung fällig" :
                       status === "mahnung3" ? "3. Mahnung fällig" :
+                      status === "storniert" ? "Storniert" :
                       "Bezahlt";
     
     let description = "";
@@ -1489,11 +1549,17 @@ function render() {
     }
     
     let actions = "";
-    if (!invoice.paid) {
+    if (invoice.cancelled) {
+      actions = `
+        <button class="small" onclick="uncancelInvoice(${originalIndex})">Storno rückgängig</button>
+        <button class="small" onclick="openEditModal(${originalIndex})">Bearbeiten</button>
+      `;
+    } else if (!invoice.paid) {
       actions = `
         <button class="small" onclick="generatePDF(${originalIndex})">PDF</button>
         <button class="small" onclick="sendReminder(${originalIndex})">Mahnung</button>
-        <button class="small" onclick="markPaid(${originalIndex})">Bezahlt</button>
+        <button class="small" onclick="openMarkPaidModal(${originalIndex})">Bezahlt</button>
+        <button class="small" onclick="cancelInvoice(${originalIndex})">Stornieren</button>
         <button class="small" onclick="openEditModal(${originalIndex})">Bearbeiten</button>
       `;
     } else {
@@ -1502,7 +1568,7 @@ function render() {
         <button class="small" onclick="openEditModal(${originalIndex})">Bearbeiten</button>
       `;
     }
-    
+
     tr.innerHTML = `
       <td><input type="checkbox" class="invoice-checkbox" value="${originalIndex}" onchange="updateSelectedInvoiceCount()" style="transform:scale(1.3)"></td>
       <td>${typeLabel}</td>
@@ -1511,7 +1577,7 @@ function render() {
       <td>${formatCurrency(invoice.amount)}</td>
       <td>${formatDate(invoice.invoiceDate)}</td>
       <td>${formatDate(invoice.dueDate)}</td>
-      <td><span class="status-badge status-${status.replace('mahnung', 'mahnung')}">${statusLabel}</span></td>
+      <td><span class="status-badge status-${status}">${statusLabel}</span>${invoice.cancelled && invoice.cancelReason ? `<br><small class="hint">${invoice.cancelReason}</small>` : ''}${invoice.paid && invoice.paymentNote ? `<br><small class="hint">${invoice.paymentNote}</small>` : ''}</td>
       <td>${actions}</td>
     `;
     
@@ -1716,11 +1782,36 @@ document.getElementById("invoiceForm").addEventListener("submit", e => {
 });
 
 // Bezahlt markieren
-function markPaid(index) {
+// Zahlungsdatum + Bemerkung werden über ein kleines Modal erfasst statt
+// direkt beim Klick verbucht (User-Wunsch): das Zahlungsdatum ist beim Klick
+// selbst oft nicht das tatsächliche Datum (User schaut nur monatlich ins
+// Banking), und ein Freitextfeld deckt Sonderfälle wie Überzahlung/Spende ab,
+// ohne dafür eine eigene Buchhaltungslogik nachzubauen.
+function openMarkPaidModal(index) {
+  document.getElementById('markpaid_index').value = index;
+  document.getElementById('markpaid_date').valueAsDate = new Date();
+  document.getElementById('markpaid_note').value = '';
+  document.getElementById('markPaidModal').classList.add('active');
+}
+
+function closeMarkPaidModal() {
+  document.getElementById('markPaidModal').classList.remove('active');
+}
+
+document.getElementById('markPaidForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const index = parseInt(document.getElementById('markpaid_index').value);
+  const paidDate = document.getElementById('markpaid_date').value;
+  const note = document.getElementById('markpaid_note').value.trim();
+  markPaid(index, paidDate, note);
+  closeMarkPaidModal();
+});
+
+function markPaid(index, paidDate, note) {
   const invoices = loadInvoices();
-  const today = new Date().toISOString().split("T")[0];
   invoices[index].paid = true;
-  invoices[index].paidDate = today;
+  invoices[index].paidDate = paidDate || new Date().toISOString().split("T")[0];
+  invoices[index].paymentNote = note || '';
   saveInvoices(invoices);
   render();
 }
@@ -1729,6 +1820,35 @@ function markUnpaid(index) {
   const invoices = loadInvoices();
   invoices[index].paid = false;
   invoices[index].paidDate = null;
+  delete invoices[index].paymentNote;
+  saveInvoices(invoices);
+  render();
+}
+
+// Stornieren (z.B. Vereinsaustritt, Person zahlt Rechnung nicht mehr) — eigener
+// Status statt Archiv: Rechnung bleibt in der normalen Übersicht sichtbar
+// (Nachvollziehbarkeit, warum sie nie bezahlt wurde), zählt aber nicht mehr im
+// Mahnwesen/Dashboard als offen. Archiv (deleteInvoice) bleibt daneben bestehen
+// für Rechnungen, die komplett aus der normalen Ansicht verschwinden sollen
+// (z.B. versehentlich erstellt).
+function cancelInvoice(index) {
+  const invoices = loadInvoices();
+  const invoice = invoices[index];
+  const reason = prompt(`Rechnung für "${invoice.customerName}" stornieren.\n\nGrund (optional):`, '');
+  if (reason === null) return; // abgebrochen
+  invoice.cancelled = true;
+  invoice.cancelledAt = new Date().toISOString();
+  invoice.cancelReason = reason.trim();
+  saveInvoices(invoices);
+  render();
+}
+
+function uncancelInvoice(index) {
+  const invoices = loadInvoices();
+  const invoice = invoices[index];
+  invoice.cancelled = false;
+  delete invoice.cancelledAt;
+  delete invoice.cancelReason;
   saveInvoices(invoices);
   render();
 }
@@ -1902,12 +2022,9 @@ function generatePDF(index, outputMode = 'save') {
       }
     }
     
-    let filename;
-    if (invoice.type === 'membership') {
-      filename = `Mitgliederbeitrag_${invoice.customerName}_${invoice.year}.pdf`;
-    } else {
-      filename = `Rechnung_${invoice.invoiceNumber}_${invoice.customerName}.pdf`;
-    }
+    // Nomenklatur Rechnungsnummer_Kundenname (deckungsgleich mit der "Beleg"-
+    // Spalte im CSV-Export, siehe belegFilename()).
+    const filename = belegFilename(invoice);
     // Analyse Punkt 2: merkt sich, dass für diese Rechnung ein PDF erzeugt
     // wurde -> editForm-Submit kann bei späteren Betrags-/Positionsänderungen
     // warnen, dass der Kunde ggf. eine andere Version erhalten hat.
@@ -2031,28 +2148,34 @@ function exportData() {
   URL.revokeObjectURL(a.href);
 }
 
-// Analyse Punkt 5: Rechnungsnummer fehlte im Export, obwohl sie der
-// naheliegende Schlüssel für jeden externen Abgleich (Excel, Treuhand) wäre.
-// Ausserdem: archivierte Rechnungen (Soft-Delete, siehe deleteInvoice())
-// gehören nicht in den Buchhaltungs-Export.
+function csvEscape(v) {
+  return String(v ?? '').replace(/"/g, '""');
+}
+
+// Spalten 1:1 wie in der bisher manuell geführten Excel-Tabelle (User-Vorgabe):
+// Rechnungsnummer, Datum, Kunde, Text, Betrag, Zahlungsziel, Zahlungsdatum, Beleg
+// (Beleg = Dateiname nach dem Muster Rechnungsnummer_Kundenname, siehe belegFilename() —
+// exakt der Dateiname, unter dem generatePDF() das zugehörige PDF speichert), plus
+// Bemerkung als letzte Spalte ganz rechts (Freitext aus dem "Bezahlt"-Modal, z.B.
+// Hinweis auf Überzahlung/Spende — User-Vorgabe).
+// Archivierte Rechnungen gehören nicht in den Buchhaltungs-Export (Analyse Punkt 5).
 function exportCSV() {
   const invoices = loadInvoices().filter(inv => !inv.deleted);
-  let csv = "Typ,Rechnungsnummer,Name,Straße,PLZ/Ort,E-Mail,Beschreibung,Betrag,Rechnung vom,Fällig am,Status,Bezahlt am\n";
+  let csv = "Rechnungsnummer,Datum,Kunde,Text,Betrag,Zahlungsziel,Zahlungsdatum,Beleg,Bemerkung\n";
 
   invoices.forEach(inv => {
-    const status = calculateStatus(inv);
-    const typeLabel = inv.type === 'membership' ? 'Mitgliederbeitrag' : 'Rechnung';
-    let description;
+    let text;
     if (inv.type === 'membership') {
       const typeInfo = MEMBER_TYPES[inv.memberType];
-      description = `Mitgliederbeitrag ${inv.year} (${typeInfo.label})`;
+      text = `Mitgliederbeitrag ${inv.year}${typeInfo ? ' (' + typeInfo.label + ')' : ''}`;
     } else {
-      description = inv.subject || inv.invoiceNumber;
+      text = inv.subject || inv.invoiceNumber || '';
     }
+    const invoiceNumber = inv.invoiceNumber || (inv.type === 'membership' ? `MB-${inv.year}` : '');
 
-    csv += `"${typeLabel}","${inv.invoiceNumber || ''}","${inv.customerName}","${inv.memberStreet || ''}","${inv.memberCity || ''}","${inv.memberEmail}","${description}",${inv.amount},"${formatDate(inv.invoiceDate)}","${formatDate(inv.dueDate)}","${status}","${inv.paidDate ? formatDate(inv.paidDate) : '-'}"\n`;
+    csv += `"${csvEscape(invoiceNumber)}","${csvEscape(formatDate(inv.invoiceDate))}","${csvEscape(inv.customerName)}","${csvEscape(text)}",${inv.amount},"${csvEscape(formatDate(inv.dueDate))}","${inv.paidDate ? csvEscape(formatDate(inv.paidDate)) : ''}","${csvEscape(belegFilename(inv))}","${csvEscape(inv.paymentNote || '')}"\n`;
   });
-  
+
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -2442,10 +2565,44 @@ function autoSaveContactFromInvoice(name, email, street, city) {
   } else {
     contacts.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      name, email: email || '', street: street || '', city: city || '', notes: ''
+      name, email: email || '', street: street || '', city: city || '', notes: '', tags: []
     });
   }
   saveContacts(contacts);
+}
+
+// Bestehende Rechnungen als Kontakte ergänzen (Nachtrag: Kontakte gab es erst
+// ab dem Redesign, ältere Rechnungen wurden nie automatisch als Kontakt
+// gespeichert). Füllt nur fehlende Felder bei bereits vorhandenen Kontakten
+// auf, überschreibt nichts manuell Erfasstes/Kuratiertes (z.B. Tags).
+function importContactsFromInvoices() {
+  const invoices = loadInvoices().filter(inv => !inv.deleted);
+  const contacts = loadContacts();
+  let added = 0, updated = 0;
+
+  invoices.forEach(inv => {
+    if (!inv.customerName) return;
+    const existing = contacts.find(c => c.name.toLowerCase() === inv.customerName.toLowerCase());
+    if (existing) {
+      let changed = false;
+      if (!existing.email  && inv.memberEmail)  { existing.email  = inv.memberEmail;  changed = true; }
+      if (!existing.street && inv.memberStreet) { existing.street = inv.memberStreet; changed = true; }
+      if (!existing.city   && inv.memberCity)   { existing.city   = inv.memberCity;   changed = true; }
+      if (changed) updated++;
+    } else {
+      contacts.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2) + added,
+        name: inv.customerName,
+        email: inv.memberEmail || '', street: inv.memberStreet || '', city: inv.memberCity || '',
+        notes: '', tags: []
+      });
+      added++;
+    }
+  });
+
+  saveContacts(contacts);
+  renderContactsGrid();
+  alert(`${added} neue${added === 1 ? 'r' : ''} Kontakt${added === 1 ? '' : 'e'} aus bestehenden Rechnungen ergänzt.\n${updated} bestehende Kontakte mit fehlenden Angaben aufgefüllt.`);
 }
 
 // ========== PERSONEN-DATENBANK ==========
@@ -2480,6 +2637,7 @@ function renderContactsGrid() {
       <div class="contact-detail">${c.email}</div>
       ${c.street ? `<div class="contact-detail">${c.street}</div>` : ''}
       ${c.city   ? `<div class="contact-detail">${c.city}</div>` : ''}
+      ${c.tags && c.tags.length ? `<div class="contact-tags">${c.tags.map(t => `<span class="tag-chip">${t}</span>`).join('')}</div>` : ''}
       ${c.notes  ? `<div class="contact-detail" style="margin-top:6px;font-style:italic">${c.notes}</div>` : ''}
       <div class="contact-card-actions">
         <button class="small" onclick="openContactModal('${c.id}')">Bearbeiten</button>
@@ -2488,28 +2646,49 @@ function renderContactsGrid() {
   `).join('');
 }
 
+// Tag-Filter (Sammelrechnung): erlaubt, Kontakte nach einem Freitext-Tag
+// (z.B. "Mitglied VSPW") einzugrenzen, bevor man "Alle auswählen" klickt.
+// Ausgewählte Kontakte werden in bulkSelectedContactIds geführt (nicht per
+// DOM-Scan), damit ein Filterwechsel getroffene Auswahl nicht verwirft.
 function renderBulkContactsGrid() {
   const grid = document.getElementById('bulk-contacts-grid');
   if (!grid) return;
   const contacts = loadContacts();
+
+  const filterSel = document.getElementById('bulk_tagFilter');
+  if (filterSel) {
+    const allTags = [...new Set(contacts.flatMap(c => c.tags || []))].sort((a, b) => a.localeCompare(b, 'de'));
+    const current = filterSel.value;
+    filterSel.innerHTML = '<option value="">Alle Kontakte</option>' +
+      allTags.map(t => `<option value="${t}">${t}</option>`).join('');
+    if (allTags.includes(current)) filterSel.value = current;
+  }
+  const activeTag = filterSel ? filterSel.value : '';
+  const visible = activeTag ? contacts.filter(c => (c.tags || []).includes(activeTag)) : contacts;
 
   if (contacts.length === 0) {
     grid.innerHTML = '<p class="hint">Noch keine Kontakte gespeichert. Im Tab «Kontakte» anlegen.</p>';
     updateBulkCount();
     return;
   }
+  if (visible.length === 0) {
+    grid.innerHTML = '<p class="hint">Kein Kontakt mit diesem Tag.</p>';
+    updateBulkCount();
+    return;
+  }
 
-  contacts.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  visible.sort((a, b) => a.name.localeCompare(b.name, 'de'));
 
-  grid.innerHTML = contacts.map(c => `
+  grid.innerHTML = visible.map(c => `
     <div class="contact-card">
       <label>
-        <input type="checkbox" class="bulk-contact-checkbox" value="${c.id}" onchange="updateBulkCount()">
+        <input type="checkbox" class="bulk-contact-checkbox" value="${c.id}" ${bulkSelectedContactIds.has(c.id) ? 'checked' : ''} onchange="toggleBulkContact('${c.id}', this.checked)">
         <div style="flex:1">
           <strong>${c.name}</strong>
           <div class="contact-detail">${c.email}</div>
           ${c.street ? `<div class="contact-detail">${c.street}</div>` : ''}
           ${c.city   ? `<div class="contact-detail">${c.city}</div>` : ''}
+          ${c.tags && c.tags.length ? `<div class="contact-tags">${c.tags.map(t => `<span class="tag-chip">${t}</span>`).join('')}</div>` : ''}
           ${c.notes  ? `<div class="contact-detail" style="margin-top:6px;font-style:italic">${c.notes}</div>` : ''}
         </div>
       </label>
@@ -2519,24 +2698,31 @@ function renderBulkContactsGrid() {
   updateBulkCount();
 }
 
-function updateBulkCount() {
-  const el = document.getElementById('bulk_count');
-  if (el) el.textContent = document.querySelectorAll('.bulk-contact-checkbox:checked').length;
+function toggleBulkContact(id, checked) {
+  if (checked) bulkSelectedContactIds.add(id);
+  else bulkSelectedContactIds.delete(id);
+  updateBulkCount();
 }
 
+function updateBulkCount() {
+  const el = document.getElementById('bulk_count');
+  if (el) el.textContent = bulkSelectedContactIds.size;
+}
+
+// Wirkt nur auf die aktuell sichtbaren (ggf. tag-gefilterten) Kontakte —
+// genau der vom User gewünschte "alle relevanten Kontakte auswählen"-Ablauf.
 function selectAllContacts() {
-  document.querySelectorAll('.bulk-contact-checkbox').forEach(cb => cb.checked = true);
+  document.querySelectorAll('.bulk-contact-checkbox').forEach(cb => { cb.checked = true; bulkSelectedContactIds.add(cb.value); });
   updateBulkCount();
 }
 
 function deselectAllContacts() {
-  document.querySelectorAll('.bulk-contact-checkbox').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.bulk-contact-checkbox').forEach(cb => { cb.checked = false; bulkSelectedContactIds.delete(cb.value); });
   updateBulkCount();
 }
 
 function getSelectedContacts() {
-  const ids = [...document.querySelectorAll('.bulk-contact-checkbox:checked')].map(cb => cb.value);
-  return loadContacts().filter(c => ids.includes(c.id));
+  return loadContacts().filter(c => bulkSelectedContactIds.has(c.id));
 }
 
 function createBulkInvoices() {
@@ -2585,7 +2771,11 @@ function createBulkInvoices() {
   }
 
   saveInvoices(invoices);
-  deselectAllContacts();
+  // Ganze Auswahl leeren (nicht nur die aktuell tag-gefilterten Kontakte wie
+  // deselectAllContacts() das für den Button-Klick tut) — nach dem Erstellen
+  // soll wirklich nichts mehr markiert sein, unabhängig vom zuletzt aktiven Filter.
+  bulkSelectedContactIds.clear();
+  renderBulkContactsGrid();
   render();
   alert(`${numbers.length} Rechnungen erstellt:\n${numbers.join(', ')}`);
   // Kein automatischer Sprung zur Übersicht mehr (User-Wunsch), siehe
@@ -2606,6 +2796,7 @@ function openContactModal(id) {
     document.getElementById('contact_email').value  = c.email  || '';
     document.getElementById('contact_street').value = c.street || '';
     document.getElementById('contact_city').value   = c.city   || '';
+    document.getElementById('contact_tags').value   = (c.tags || []).join(', ');
     document.getElementById('contact_notes').value  = c.notes  || '';
     deleteBtn.style.display = 'block';
   } else {
@@ -2641,6 +2832,7 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
     email:  document.getElementById('contact_email').value.trim(),
     street: document.getElementById('contact_street').value.trim(),
     city:   document.getElementById('contact_city').value.trim(),
+    tags:   document.getElementById('contact_tags').value.split(',').map(t => t.trim()).filter(Boolean),
     notes:  document.getElementById('contact_notes').value.trim()
   };
 
@@ -2684,7 +2876,7 @@ function saveCurrentContactFromForm(prefix) {
   } else {
     contacts.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-      name, email, street, city, notes: ''
+      name, email, street, city, notes: '', tags: []
     });
     saveContacts(contacts);
   }
@@ -2927,6 +3119,7 @@ async function pullFromGitHub(org) {
 
 async function switchOrg(newOrg) {
   ORG = newOrg;
+  bulkSelectedContactIds.clear(); // Kontakt-IDs sind pro Org, aus anderer Org nicht mehr gültig
   localStorage.setItem(GH_LAST_ORG_KEY, newOrg);
   document.title = newOrg + ' Rechnungsverwaltung';
   // Kein Löschen des lokalen Stands mehr vor dem Pull (Fix, D-Redesign): die
