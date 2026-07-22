@@ -164,6 +164,12 @@ tr.cancelled { background: rgba(138,138,138,0.07); opacity: 0.7; }
 .status-mahnung3  { background: #450a0a; color: #f87171; }
 .status-bezahlt   { background: #052e16; color: var(--green); }
 .status-storniert { background: var(--surface-2); color: var(--text-dim); border: 1px dashed var(--border); text-decoration: line-through; }
+/* "…verschickt" (Mahnung bereits gesendet, wartet noch auf die Frist im
+   Mahnschreiben) — bewusst nur umrandet statt gefüllt: signalisiert "erledigt,
+   keine Aktion nötig" im Gegensatz zum gefüllten "…fällig"-Badge derselben Farbe. */
+.status-mahnung1-versendet { background: none; border: 1px solid var(--warn);   color: var(--warn); }
+.status-mahnung2-versendet { background: none; border: 1px solid var(--orange); color: var(--orange); }
+.status-mahnung3-versendet { background: none; border: 1px solid #f87171;       color: #f87171; }
 .type-membership { background: #172554; color: var(--accent); }
 .type-invoice    { background: #2e1065; color: var(--purple); }
 
@@ -468,9 +474,12 @@ tr.cancelled { background: rgba(138,138,138,0.07); opacity: 0.7; }
   <div class="legend">
     <strong>Status:</strong>
     <span class="status-badge status-offen">Offen</span>
-    <span class="status-badge status-mahnung1">1. Mahnung</span>
-    <span class="status-badge status-mahnung2">2. Mahnung</span>
-    <span class="status-badge status-mahnung3">3. Mahnung</span>
+    <span class="status-badge status-mahnung1">1. Mahnung fällig</span>
+    <span class="status-badge status-mahnung1-versendet">1. Mahnung verschickt</span>
+    <span class="status-badge status-mahnung2">2. Mahnung fällig</span>
+    <span class="status-badge status-mahnung2-versendet">2. Mahnung verschickt</span>
+    <span class="status-badge status-mahnung3">3. Mahnung fällig</span>
+    <span class="status-badge status-mahnung3-versendet">3. Mahnung verschickt</span>
     <span class="status-badge status-bezahlt">Bezahlt</span>
     <span class="status-badge status-storniert">Storniert</span>
     <br><br>
@@ -579,6 +588,31 @@ tr.cancelled { background: rgba(138,138,138,0.07); opacity: 0.7; }
     <p style="font-size:0.82em; color:var(--text-dim); margin-top:6px;">
       <strong>Empfohlen: PNG</strong> – der QR-Einzahlungsschein sollte exakt 210 × 106 mm gross sein (A4-Breite, unterer Abschnitt).
     </p>
+  </div>
+
+  <div class="settings-section">
+    <h3>Mahnungstexte</h3>
+    <p class="hint" style="margin-bottom:10px;">
+      Text der jeweiligen Mahn-E-Mail (der Betreff wird weiterhin automatisch erzeugt). Platzhalter werden beim
+      Versand ersetzt: <code>{{vorname}}</code>, <code>{{name}}</code>, <code>{{beschreibung}}</code>,
+      <code>{{betrag}}</code>, <code>{{faelligkeitsdatum}}</code>, <code>{{neues_zahlungsziel}}</code>,
+      <code>{{iban}}</code>, <code>{{kontoinhaber}}</code>.
+    </p>
+    <div class="form-full">
+      <label>1. Mahnung</label>
+      <textarea id="s_reminderTemplate1" rows="11" style="font-family:monospace; font-size:12.5px;"></textarea>
+      <button type="button" class="small" style="margin-top:6px;" onclick="resetReminderTemplate(1)">Auf Standardtext zurücksetzen</button>
+    </div>
+    <div class="form-full">
+      <label>2. Mahnung</label>
+      <textarea id="s_reminderTemplate2" rows="9" style="font-family:monospace; font-size:12.5px;"></textarea>
+      <button type="button" class="small" style="margin-top:6px;" onclick="resetReminderTemplate(2)">Auf Standardtext zurücksetzen</button>
+    </div>
+    <div class="form-full">
+      <label>3. Mahnung</label>
+      <textarea id="s_reminderTemplate3" rows="9" style="font-family:monospace; font-size:12.5px;"></textarea>
+      <button type="button" class="small" style="margin-top:6px;" onclick="resetReminderTemplate(3)">Auf Standardtext zurücksetzen</button>
+    </div>
   </div>
 
   <div class="settings-section">
@@ -1212,6 +1246,67 @@ const REMINDER_DAYS = {
   third: 14
 };
 
+// Mahnungstexte editierbar (Einstellungen → "Mahnungstexte"): Platzhalter in
+// {{doppelten geschweiften Klammern}} werden beim Versand ersetzt, siehe
+// renderReminderTemplate(). Diese Defaults sind gleichzeitig der ursprünglich
+// fest im Code stehende Text (1:1 identisch, nur parametrisiert) — sie greifen,
+// solange in den Einstellungen kein eigener Text gespeichert wurde.
+const REMINDER_TEMPLATE_DEFAULTS = {
+  1: `Hallo {{vorname}}
+
+dies ist eine automatische Erinnerung an die Zahlung für: {{beschreibung}}.
+
+Rechnungsbetrag: {{betrag}}
+Ursprüngliches Fälligkeitsdatum: {{faelligkeitsdatum}}
+Neues Zahlungsziel: {{neues_zahlungsziel}}
+
+Bitte überweise den Betrag bis zum neuen Zahlungsziel.
+
+Zahlungsinformationen:
+IBAN: {{iban}}
+Kontoinhaber: {{kontoinhaber}}
+Verwendungszweck: {{beschreibung}} - {{name}}
+
+Vielen Dank für die Unterstützung!
+{{kontoinhaber}}`,
+  2: `Hallo {{vorname}}
+
+leider haben wir bisher keine Zahlung für: {{beschreibung}} erhalten.
+
+Rechnungsbetrag: {{betrag}}
+Neues Zahlungsziel: {{neues_zahlungsziel}}
+
+Bitte überweise den Betrag umgehend.
+
+Zahlungsinformationen:
+IBAN: {{iban}}
+Kontoinhaber: {{kontoinhaber}}
+Verwendungszweck: {{beschreibung}} - {{name}}
+
+Vielen Dank für die Unterstützung!
+{{kontoinhaber}}`,
+  3: `Hallo {{vorname}}
+
+trotz mehrfacher Erinnerung haben wir noch keine Zahlung für: {{beschreibung}} erhalten.
+
+Rechnungsbetrag: {{betrag}}
+Letztes Zahlungsziel: {{neues_zahlungsziel}}
+
+Bitte überweise den Betrag sofort oder kontaktiere uns, falls es Probleme gibt.
+
+Zahlungsinformationen:
+IBAN: {{iban}}
+Kontoinhaber: {{kontoinhaber}}
+Verwendungszweck: {{beschreibung}} - {{name}}
+
+Vielen Dank für die Unterstützung!
+{{kontoinhaber}}`
+};
+
+function renderReminderTemplate(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => vars[key] !== undefined ? vars[key] : match);
+}
+
 // Neutrale Icons statt Emoji (Design-Angleichung an Fundraising/Kommunikation,
 // gleiches Muster: kleines Stroke-SVG + Text in prominenten Aktions-Buttons,
 // modal-Buttons/kleine Zeilen-Aktionen bleiben bewusst reiner Text ohne Icon).
@@ -1417,25 +1512,36 @@ function belegFilename(invoice) {
   return `${sanitizeFilename(num)}_${sanitizeFilename(invoice.customerName)}.pdf`;
 }
 
+// Unterscheidet "Mahnung fällig" (Aktion nötig: Mahnung jetzt verschicken)
+// von "Mahnung verschickt" (bereits erledigt, wartet noch auf die im
+// Mahnschreiben selbst genannte neue Frist). Vorher lieferte reminder1Date
+// (wird beim Versand auf HEUTE gesetzt) ab dem nächsten Tag denselben Status
+// "mahnung1" wie der unversendete Fall — die Übersicht konnte also nie
+// zeigen, ob eine bereits gemahnte Rechnung noch offen war oder nicht.
+// Die Gnadenfrist wird aus REMINDER_DAYS abgeleitet (kein neues Feld nötig):
+// das ist exakt dieselbe Frist, die sendReminder() dem Kunden im
+// Mahnschreiben selbst als "Neues Zahlungsziel" nennt.
 function calculateStatus(invoice) {
   if (invoice.cancelled) return "storniert";
   if (invoice.paid) return "bezahlt";
-  
+
   const today = new Date().toISOString().split("T")[0];
-  
-  if (invoice.reminder3Date && today > invoice.reminder3Date) {
-    return "mahnung3";
+
+  if (invoice.reminder3Date) {
+    return "mahnung3-versendet"; // letzte Eskalationsstufe, danach nur noch persönlicher Kontakt
   }
-  if (invoice.reminder2Date && today > invoice.reminder2Date) {
-    return "mahnung2";
+  if (invoice.reminder2Date) {
+    const grace = addDays(invoice.reminder2Date, REMINDER_DAYS.second);
+    return today > grace ? "mahnung3" : "mahnung2-versendet";
   }
-  if (invoice.reminder1Date && today > invoice.reminder1Date) {
-    return "mahnung1";
+  if (invoice.reminder1Date) {
+    const grace = addDays(invoice.reminder1Date, REMINDER_DAYS.first);
+    return today > grace ? "mahnung2" : "mahnung1-versendet";
   }
   if (today > invoice.dueDate) {
     return "mahnung1";
   }
-  
+
   return "offen";
 }
 
@@ -1525,14 +1631,17 @@ function render() {
     const tr = document.createElement("tr");
     tr.className = status === "bezahlt" ? "paid" :
                    status === "storniert" ? "cancelled" :
-                   status === "mahnung1" ? "reminder1" :
-                   status === "mahnung2" ? "reminder2" :
-                   status === "mahnung3" ? "reminder3" : "";
+                   status.startsWith("mahnung1") ? "reminder1" :
+                   status.startsWith("mahnung2") ? "reminder2" :
+                   status.startsWith("mahnung3") ? "reminder3" : "";
 
     let statusLabel = status === "offen" ? "Offen" :
                       status === "mahnung1" ? "1. Mahnung fällig" :
+                      status === "mahnung1-versendet" ? "1. Mahnung verschickt" :
                       status === "mahnung2" ? "2. Mahnung fällig" :
+                      status === "mahnung2-versendet" ? "2. Mahnung verschickt" :
                       status === "mahnung3" ? "3. Mahnung fällig" :
+                      status === "mahnung3-versendet" ? "3. Mahnung verschickt" :
                       status === "storniert" ? "Storniert" :
                       "Bezahlt";
     
@@ -1668,13 +1777,18 @@ function renderMembershipList() {
   invoices.forEach((invoice) => {
     const status = calculateStatus(invoice);
     const typeInfo = MEMBER_TYPES[invoice.memberType];
-    const statusClass = status === "bezahlt" ? "paid" : 
+    const statusClass = status === "bezahlt" ? "paid" :
+                       status === "storniert" ? "cancelled" :
                        status.startsWith("mahnung") ? "reminder1" : "";
-    
+
     let statusLabel = status === "offen" ? "Offen" :
                       status === "mahnung1" ? "1. Mahnung" :
+                      status === "mahnung1-versendet" ? "1. Mahnung verschickt" :
                       status === "mahnung2" ? "2. Mahnung" :
+                      status === "mahnung2-versendet" ? "2. Mahnung verschickt" :
                       status === "mahnung3" ? "3. Mahnung" :
+                      status === "mahnung3-versendet" ? "3. Mahnung verschickt" :
+                      status === "storniert" ? "Storniert" :
                       "Bezahlt";
     
     html += `
@@ -2076,8 +2190,8 @@ function sendReminder(index) {
   }
 
   const firstName = invoice.customerName.split(" ")[0];
-  let subject, bodyText, invDescription;
-  
+  let subject, invDescription;
+
   if (invoice.type === 'membership') {
     subject = encodeURIComponent(`${reminderLevel}. Mahnung: Mitgliedsbeitrag ${invoice.year}`);
     invDescription = `Mitgliederbeitrag ${invoice.year}`;
@@ -2085,51 +2199,44 @@ function sendReminder(index) {
     subject = encodeURIComponent(`${reminderLevel}. Mahnung: Rechnung ${invoice.invoiceNumber}`);
     invDescription = `Rechnung ${invoice.invoiceNumber}`;
   }
-  
-  bodyText = `Hallo ${firstName}\n\n`;
-  
-  if (reminderLevel === 1) {
-    bodyText += 
-      `dies ist eine freundliche Erinnerung an die Zahlung für: ${invDescription}.\n\n` +
-      `Rechnungsbetrag: ${formatCurrency(invoice.amount)}\n` +
-      `Ursprüngliches Fälligkeitsdatum: ${formatDate(invoice.dueDate)}\n` +
-      `Neues Zahlungsziel: ${formatDate(newDueDate)}\n\n` +
-      `Bitte überweise den Betrag bis zum neuen Zahlungsziel.\n\n`;
-  } else if (reminderLevel === 2) {
-    bodyText += 
-      `leider haben wir bisher keine Zahlung für: ${invDescription} erhalten.\n\n` +
-      `Rechnungsbetrag: ${formatCurrency(invoice.amount)}\n` +
-      `Neues Zahlungsziel: ${formatDate(newDueDate)}\n\n` +
-      `Bitte überweise den Betrag umgehend.\n\n`;
-  } else {
-    bodyText += 
-      `trotz mehrfacher Erinnerung haben wir noch keine Zahlung für: ${invDescription} erhalten.\n\n` +
-      `Rechnungsbetrag: ${formatCurrency(invoice.amount)}\n` +
-      `Letztes Zahlungsziel: ${formatDate(newDueDate)}\n\n` +
-      `Bitte überweise den Betrag sofort oder kontaktiere uns, falls es Probleme gibt.\n\n`;
-  }
-  
-  bodyText += 
-    `Zahlungsinformationen:\n` +
-    `IBAN: ${loadSettings().iban || ''}\n` +
-    `Kontoinhaber: ${loadSettings().senderName || ''}\n` +
-    `Verwendungszweck: ${invDescription} - ${invoice.customerName}\n\n` +
-    `Vielen Dank für die Unterstützung!\n` +
-    `${loadSettings().senderName || ''}`;
-  
+
+  // Text kommt aus den Einstellungen (Mahnungstexte), falls dort für diese
+  // Stufe ein eigener Text hinterlegt wurde — sonst Standardtext (siehe
+  // REMINDER_TEMPLATE_DEFAULTS oben, User-Wunsch: Mahnungstexte editierbar).
+  const s = loadSettings();
+  const template = s['reminderTemplate' + reminderLevel] || REMINDER_TEMPLATE_DEFAULTS[reminderLevel];
+  const bodyText = renderReminderTemplate(template, {
+    vorname: firstName,
+    name: invoice.customerName,
+    beschreibung: invDescription,
+    betrag: formatCurrency(invoice.amount),
+    faelligkeitsdatum: formatDate(invoice.dueDate),
+    neues_zahlungsziel: formatDate(newDueDate),
+    iban: s.iban || '',
+    kontoinhaber: s.senderName || ''
+  });
+
   const body = encodeURIComponent(bodyText);
   window.location.href = `mailto:${invoice.memberEmail}?subject=${subject}&body=${body}`;
 
-  if (!confirm('Mail abgeschickt?\n\nBei "Abbrechen" bleibt der Mahnstatus dieser Rechnung unverändert, du kannst die Mahnung später erneut auslösen.')) {
-    return;
-  }
+  // Kurze Verzögerung vor der Rückfrage: das Öffnen von mailto:-Links über
+  // location.href übergibt nur den Auftrag ans Betriebssystem/Mail-Programm,
+  // JS läuft direkt synchron weiter. Ohne Verzögerung poppte der blockierende
+  // confirm() dadurch oft auf, bevor der Mail-Entwurf überhaupt sichtbar war
+  // — Reihenfolge ergab für den User keinen Sinn. setTimeout gibt dem
+  // Mail-Programm einen Moment, um tatsächlich zu öffnen.
+  setTimeout(() => {
+    if (!confirm('Mail abgeschickt?\n\nBei "Abbrechen" bleibt der Mahnstatus dieser Rechnung unverändert, du kannst die Mahnung später erneut auslösen.')) {
+      return;
+    }
 
-  if (reminderLevel === 1) invoice.reminder1Date = today;
-  else if (reminderLevel === 2) invoice.reminder2Date = today;
-  else invoice.reminder3Date = today;
+    if (reminderLevel === 1) invoice.reminder1Date = today;
+    else if (reminderLevel === 2) invoice.reminder2Date = today;
+    else invoice.reminder3Date = today;
 
-  saveInvoices(invoices);
-  render();
+    saveInvoices(invoices);
+    render();
+  }, 600);
 }
 
 // Export
@@ -2459,8 +2566,15 @@ function renderSettingsForm() {
   set('s_city',   s.senderCity);
   set('s_web',    s.senderWeb);
   set('s_iban',   s.iban);
+  set('s_reminderTemplate1', s.reminderTemplate1 || REMINDER_TEMPLATE_DEFAULTS[1]);
+  set('s_reminderTemplate2', s.reminderTemplate2 || REMINDER_TEMPLATE_DEFAULTS[2]);
+  set('s_reminderTemplate3', s.reminderTemplate3 || REMINDER_TEMPLATE_DEFAULTS[3]);
   _applyImagePreview('header', s.headerImage || null);
   _applyImagePreview('qr',     s.qrImage     || null);
+}
+
+function resetReminderTemplate(level) {
+  document.getElementById('s_reminderTemplate' + level).value = REMINDER_TEMPLATE_DEFAULTS[level];
 }
 
 function _applyImagePreview(type, dataUrl) {
@@ -2514,6 +2628,11 @@ function saveSettingsForm() {
   s.senderCity   = document.getElementById('s_city').value.trim();
   s.senderWeb    = document.getElementById('s_web').value.trim();
   s.iban         = document.getElementById('s_iban').value.trim();
+  // Kein .trim(): Zeilenumbrüche/Einrückung im Mahnungstext sind gewollte
+  // Formatierung, keine überflüssigen Leerzeichen wie bei den Adressfeldern.
+  s.reminderTemplate1 = document.getElementById('s_reminderTemplate1').value;
+  s.reminderTemplate2 = document.getElementById('s_reminderTemplate2').value;
+  s.reminderTemplate3 = document.getElementById('s_reminderTemplate3').value;
   saveSettings(s);
   alert('Einstellungen gespeichert.');
 }
